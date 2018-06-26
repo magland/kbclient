@@ -1,6 +1,6 @@
 exports.v1 = KBClient;
 
-const KBClientImpl=require(__dirname+'/impl/kbclientimpl.js');
+const KBClientImpl=require(__dirname+'/impl/kbclientimpl.js').KBClientImpl;
 
 // Note: for webpack we need: externals:{"fs":"require('fs')"}
 

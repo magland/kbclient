@@ -19,5 +19,9 @@
   "bugs": {
     "url": "https://github.com/magland/kbclient/issues"
   },
-  "homepage": "https://github.com/magland/kbclient#readme"
+  "homepage": "https://github.com/magland/kbclient#readme",
+  "dependencies": {
+    "async": "^2.6.1",
+    "axios": "^0.18.0"
+  }
 }
