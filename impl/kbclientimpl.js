@@ -17,7 +17,7 @@ function KBClientImpl() {
     }
     resolve_file_path(path, {}, function(err, path2) {
       if (err) {
-        callback(err);
+        callback(new Error(err));
         return;
       }
       if (is_url(path2)) {
@@ -28,7 +28,7 @@ function KBClientImpl() {
         var txt = fs.readFileSync(path2, 'utf8');
         callback(null, txt);
       } catch (err) {
-        callback(`Error reading text file (${err.message}): ${path2}`);
+        callback(new Error(`Error reading text file (${err.message}): ${path2}`));
       }
     });
   };
@@ -40,7 +40,7 @@ function KBClientImpl() {
     }
     resolve_file_path(path, {}, function(err, path2) {
       if (err) {
-        callback(err);
+        callback(new Error(err));
         return;
       }
       if (is_url(path2)) {
@@ -51,7 +51,7 @@ function KBClientImpl() {
       let end = opts.end;
       fs.open(path2, 'r', function(err, fd) {
         if (err) {
-          callback(err.message);
+          callback(err);
           return;
         }
         if ((start === undefined) && (end === undefined)) {
@@ -61,7 +61,7 @@ function KBClientImpl() {
         var buffer = new Buffer(end - start);
         fs.read(fd, buffer, 0, end - start, start, function(err, num) {
           if (err) {
-            callback(err.message);
+            callback(err);
             return;
           }
           callback(null, buffer.buffer);
@@ -85,7 +85,7 @@ function KBClientImpl() {
       opts = {};
     }
     if (!path) {
-  		callback('Path is empty.');
+  		callback(new Error('Path is empty.'));
   		return;
   	}
     if (path.startsWith('kbucket://')) {
@@ -103,7 +103,7 @@ function KBClientImpl() {
       let HKBC = new HttpKBucketClient();
       HKBC.readDir(kbhub_id, subdirectory, function(err, files, dirs) {
         if (err) {
-          callback('Error reading directory of kbucket hub: ' + err);
+          callback(new Error('Error reading directory of kbucket hub: ' + err));
           return;
         }
         let files2 = {};
@@ -154,7 +154,7 @@ function KBClientImpl() {
         } else {
           fs.stat(item_path, function(err0, stat0) {
             if (err0) {
-              callback(`Error in stat of file ${item}: ${err0.message}`);
+              callback(new Error(`Error in stat of file ${item}: ${err0.message}`));
               return;
             }
             if (stat0.isFile()) {
