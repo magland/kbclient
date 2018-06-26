@@ -1,0 +1,23 @@
+{
+  "name": "kbclient",
+  "version": "1.0.0",
+  "description": "JavaScript client for kbucket",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/magland/kbclient.git"
+  },
+  "keywords": [
+    "mountainlab",
+    "kbucket"
+  ],
+  "author": "Jeremy Magland",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/magland/kbclient/issues"
+  },
+  "homepage": "https://github.com/magland/kbclient#readme"
+}
