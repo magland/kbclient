@@ -523,7 +523,7 @@ function HttpKBucketClient() {
         callback(err);
         return;
       }
-      if ((accessible) && (info.kbnode_type == 'hub')) {
+      if ((accessible) && ((info.kbnode_type||info.node_type) == 'hub')) {
         callback(null, info.listen_url);
         return;
       }
@@ -531,7 +531,7 @@ function HttpKBucketClient() {
         callback(`Unable to find accessible hub (id=${kbnode_id}).`);
         return;
       }
-      find_lowest_accessible_hub_url(parent_hub_info.kbnode_id, callback);
+      find_lowest_accessible_hub_url(parent_hub_info.kbnode_id||parent_hub_info.node_id, callback);
     });
   }
 }
