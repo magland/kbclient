@@ -39,4 +39,12 @@ function KBClient() {
       });
     });
   };
+  this.downloadFile = function(path, filename_out, opts) {
+    return new Promise(function(resolve, reject) {
+      impl.downloadFile(path, filename_out, opts, function(err) {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
+  };
 }

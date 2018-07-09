@@ -10,6 +10,7 @@ const axios = require('axios');
 const async = require('async');
 
 function KBClientImpl() {
+  let that=this;
   this.readTextFile=function(path, opts, callback) {
     if (!callback) {
       callback = opts;
@@ -77,7 +78,24 @@ function KBClientImpl() {
     }
     opts.download_if_needed = true;
     resolve_file_path(path, opts, callback);
-  }
+  };
+
+  this.downloadFile=function(path, output_fname, opts, callback) {
+    let opts2=JSON.parse(JSON.stringify(opts));
+    opts2.download_to_file=output_fname;
+    that.realizeFile(path,opts2,function(err,file_path) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      if (file_path==output_fname) {
+        return;
+      }
+      console.info(`Copying file [${file_path}] -> [${output_fname}]`);
+      let write_stream=fs.createWriteStream(output_fname);
+      fs.createReadStream(file_path).pipe(write_stream);
+    });
+  };
 
   this.readDir=function(path, opts, callback) {
     if (!callback) {
@@ -263,7 +281,7 @@ function KBClientImpl() {
       return;
     }
     if (opts.download_if_needed) {
-      let tmp_fname = cache_file_path + '.downloading.' + make_random_id(5);
+      let tmp_fname = opts.download_to_file || cache_file_path + '.downloading.' + make_random_id(5);
       download_file(url, tmp_fname, {
         sha1: sha1,
         size: opts.size || undefined
@@ -307,7 +325,7 @@ function KBClientImpl() {
           return;
         }
         if (!resp.found) {
-          callback('File not found on kbucket.');
+          callback(new Error('File not found on kbucket.'));
           return;
         }
         resolve_file_path_2(sha1, resp.url, opts, callback);
