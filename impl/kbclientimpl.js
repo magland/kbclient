@@ -317,7 +317,7 @@ function KBClientImpl() {
     if (path.startsWith('sha1://')) {
       let sha1 = path.slice(('sha1://').length);
       let HKBC = new HttpKBucketClient();
-      let kbucket_url = 'https://kbucket.flatironinstitute.org';
+      let kbucket_url = process.env.KBUCKET_URL||'https://kbucket.flatironinstitute.org';
       HKBC.setKBucketUrl(kbucket_url);
       HKBC.findFile(sha1, opts, function(err, resp) {
         if (err) {
@@ -409,7 +409,7 @@ function HttpKBucketClient() {
   };
 
   //var m_kbucket_url='https://kbucket.org';
-  var m_kbucket_url = 'https://kbucket.flatironinstitute.org';
+  var m_kbucket_url = process.env.KBUCKET_URL||'https://kbucket.flatironinstitute.org';
 
   function clearCacheForFile(sha1) {
     if (sha1 in s_kbucket_client_data.infos_by_sha1) {
