@@ -31,6 +31,14 @@ function KBClient() {
       });
     });
   };
+  this.locateFile = function(path, opts) {
+    return new Promise(function(resolve, reject) {
+      impl.locateFile(path, opts, function(err, path) {
+        if (err) return reject(err);
+        resolve(path);
+      });
+    });
+  };
   this.realizeFile = function(path, opts) {
     return new Promise(function(resolve, reject) {
       impl.realizeFile(path, opts, function(err, path) {

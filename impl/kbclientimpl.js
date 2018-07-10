@@ -69,7 +69,16 @@ function KBClientImpl() {
         });
       });
     });
-  }
+  };
+
+  this.locateFile=function(path, opts, callback) {
+    if (!callback) {
+      callback = opts;
+      opts = {};
+    }
+    opts.download_if_needed = false;
+    resolve_file_path(path, opts, callback);
+  };
 
   this.realizeFile=function(path, opts, callback) {
     if (!callback) {
