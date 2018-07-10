@@ -8,6 +8,7 @@ function KBClient() {
   let impl = new KBClientImpl();
 
   this.readDir = function(path, opts) {
+    opts=opts||{};
     return new Promise(function(resolve, reject) {
       impl.readDir(path, opts, function(err, files, dirs) {
         if (err) return reject(err);
@@ -16,6 +17,7 @@ function KBClient() {
     });
   };
   this.readTextFile = function(path, opts) {
+    opts=opts||{};
     return new Promise(function(resolve, reject) {
       impl.readTextFile(path, opts, function(err, txt) {
         if (err) return reject(err);
@@ -24,6 +26,7 @@ function KBClient() {
     });
   };
   this.readBinaryFilePart = function(path, opts) {
+    opts=opts||{};
     return new Promise(function(resolve, reject) {
       impl.readBinaryFilePart(path, opts, function(err, data) {
         if (err) return reject(err);
@@ -32,6 +35,7 @@ function KBClient() {
     });
   };
   this.locateFile = function(path, opts) {
+    opts=opts||{};
     return new Promise(function(resolve, reject) {
       impl.locateFile(path, opts, function(err, path) {
         if (err) return reject(err);
@@ -40,6 +44,7 @@ function KBClient() {
     });
   };
   this.realizeFile = function(path, opts) {
+    opts=opts||{};
     return new Promise(function(resolve, reject) {
       impl.realizeFile(path, opts, function(err, path) {
         if (err) return reject(err);
@@ -48,6 +53,7 @@ function KBClient() {
     });
   };
   this.downloadFile = function(path, filename_out, opts) {
+    opts=opts||{};
     return new Promise(function(resolve, reject) {
       impl.downloadFile(path, filename_out, opts, function(err) {
         if (err) return reject(err);
