@@ -230,10 +230,10 @@ function KBClientImpl() {
           bytes_downloaded += data.length;
           report_progress(bytes_downloaded, bytes_total);
         });
-        var write_stream = fs.createWriteStream(dest_fname + '.downloading_');
+        var write_stream = fs.createWriteStream('._downloading.'+dest_fname);
         response.data.pipe(write_stream);
         response.data.on('end', function() {
-          fs.renameSync(dest_fname + '.downloading_', dest_fname);
+          fs.renameSync('._downloading.'+dest_fname, dest_fname);
           console.info(`Downloaded ${format_file_size(bytes_downloaded)} to ${dest_fname}.`)
           setTimeout(function() { //dont catch an error from execution of callback
             callback(null);
@@ -241,7 +241,7 @@ function KBClientImpl() {
         });
       })
       .catch(function(err) {
-        callback(err.message);
+        callback(err);
       });
 
     function report_progress(bytes_downloaded, bytes_total) {
@@ -312,7 +312,7 @@ function KBClientImpl() {
         try {
           fs.renameSync(tmp_fname, cache_file_path);
         } catch (err2) {
-          callback('Error renaming file after download.');
+          callback(new Error('Error renaming file after download.'));
           return;
         }
         callback(null, cache_file_path);
@@ -330,7 +330,7 @@ function KBClientImpl() {
       HKBC.setKBucketUrl(kbucket_url);
       HKBC.findFile(sha1, opts, function(err, resp) {
         if (err) {
-          callback('Error searching for file on kbucket: ' + err);
+          callback(new Error('Error searching for file on kbucket: ' + err));
           return;
         }
         if (!resp.found) {
@@ -345,21 +345,21 @@ function KBClientImpl() {
       let str = path.slice(('kbucket://').length);
       let ind0 = str.indexOf('/');
       if (ind0 < 0) {
-        callback('Improper kbucket:// path: ' + path);
+        callback(new Error('Improper kbucket:// path: ' + path));
         return;
       }
       let kbshare_id = str.slice(0, ind0);
       let HKBC = new HttpKBucketClient();
       HKBC.findLowestAccessibleHubUrl(kbshare_id, function(err, hub_url) {
         if (err) {
-          callback('Error finding kbucket share: ' + err);
+          callback(new Error('Error finding kbucket share: ' + err));
           return;
         }
         let url_prv = hub_url + '/' + kbshare_id + '/prv/' + str.slice(ind0 + 1);
         let url_download = hub_url + '/' + kbshare_id + '/download/' + str.slice(ind0 + 1);
         http_get_json(url_prv, function(err, prv0) {
           if (err) {
-            callback(`Error getting prv object (${url_prv}): ` + err);
+            callback(new Error(`Error getting prv object (${url_prv}): ` + err));
             return;
           }
           opts.filename = require('path').basename(str);
@@ -372,7 +372,7 @@ function KBClientImpl() {
     if (ends_with(path, '.prv')) {
       let obj = read_json_file(path);
       if (!obj) {
-        callback('Error reading .prv file: ' + path);
+        callback(new Error('Error reading .prv file: ' + path));
         return;
       }
       opts.filename = require('path').basename(path);
@@ -457,7 +457,7 @@ function HttpKBucketClient() {
       return;
     }
     if (!m_kbucket_url) {
-      callback('KBucketClient: kbucket url not set.');
+      callback(new Error('KBucketClient: kbucket url not set.'));
       return;
     }
     var url0 = opts.kbucket_url || m_kbucket_url;
@@ -467,7 +467,7 @@ function HttpKBucketClient() {
     }
     http_get_json(url1, function(err, obj) {
       if (err) {
-        callback(`Error in http_get_json (${url1}): ` + err, null);
+        callback(new Error(`Error in http_get_json (${url1}): ` + err), null);
         return;
       }
       if (!obj.found) {
@@ -517,14 +517,14 @@ function HttpKBucketClient() {
         return;
       }
       if (!resp.info) {
-        callback('No info field in response to nodeinfo.');
+        callback(new Error('No info field in response to nodeinfo.'));
         return;
       }
       //check accessible
       var check_url = `${resp.info.listen_url}/${kbnode_id}/api/nodeinfo`;
       console.info(`Checking whether node ${kbnode_id} is accessible from this location...`, check_url);
       url_exists(check_url, function(accessible) {
-        callback(err, resp.info, resp.parent_hub_info, accessible);
+        callback(null, resp.info, resp.parent_hub_info, accessible);
       });
     });
   }
@@ -537,7 +537,7 @@ function HttpKBucketClient() {
         return;
       }
       if (resp.error) {
-        callback(resp.error);
+        callback(new Error(resp.error));
         return;
       }
       callback(null, resp.files, resp.dirs);
@@ -555,7 +555,7 @@ function HttpKBucketClient() {
         return;
       }
       if (!parent_hub_info) {
-        callback(`Unable to find accessible hub (id=${kbnode_id}).`);
+        callback(new Error(`Unable to find accessible hub (id=${kbnode_id}).`));
         return;
       }
       find_lowest_accessible_hub_url(parent_hub_info.kbnode_id||parent_hub_info.node_id, callback);
@@ -573,7 +573,7 @@ function http_get_json(url, callback) {
       }, 0);
     })
     .catch(function(error) {
-      callback(error.message);
+      callback(error);
     });
 }
 
@@ -589,7 +589,7 @@ function http_get_text(url, callback) {
       }, 0);
     })
     .catch(function(error) {
-      callback(error.message);
+      callback(error);
     });
 }
 
@@ -608,7 +608,7 @@ function http_get_binary(url, opts, callback) {
       }, 0);
     })
     .catch(function(error) {
-      callback(error.message);
+      callback(error);
     });
 }
 
