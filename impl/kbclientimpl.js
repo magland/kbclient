@@ -230,10 +230,10 @@ function KBClientImpl() {
           bytes_downloaded += data.length;
           report_progress(bytes_downloaded, bytes_total);
         });
-        var write_stream = fs.createWriteStream('._downloading.'+dest_fname);
+        var write_stream = fs.createWriteStream(dest_fname+'.downloading_');
         response.data.pipe(write_stream);
         response.data.on('end', function() {
-          fs.renameSync('._downloading.'+dest_fname, dest_fname);
+          fs.renameSync(dest_fname+'.downloading_', dest_fname);
           console.info(`Downloaded ${format_file_size(bytes_downloaded)} to ${dest_fname}.`)
           setTimeout(function() { //dont catch an error from execution of callback
             callback(null);
