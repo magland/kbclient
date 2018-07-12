@@ -1,6 +1,6 @@
 {
   "name": "kbclient",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "JavaScript client for kbucket",
   "main": "index.js",
   "scripts": {
