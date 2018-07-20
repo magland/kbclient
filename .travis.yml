@@ -5,4 +5,11 @@ node_js:
 - node
 install:
 - npm install
-
+deploy:
+  provider: npm
+  email: jmagland@flatironinstitute.org
+  api_key:
+    secure: JrFjuoVjn+uUhf2jeQ/EGbwsK0rjsn1+MbnL94jTnci/CWDLeKNAHo9nCm/PE0FHr1vujmgBloMAgdC6saZfic61CfGn7+G/IQ17lbw+BW9vQNLhuzjV/2pnTZw8zXH7clh/UHA2fdjkQWFIqNV4EFNYfhWuYJ2sjEozonW9t4h8CxOBe6qD3ofe7Hi6R00ipH20w/nRs5gxT0bw8hG2crDkTcH00ZcxKMGbOXsC5W8iuXPYcnH6dmByvm7vf8DbyZWiASCvt8NXl3X2gESQkcUDm7GkN7uHbYUIht73xk57klmwP2ez6huMFD7NxsbLa2oJSzPxb5dZlBeP08xYlDCHxL6UuPU1kzjnPo+CzbBCspMnlO3YYrLzExPiA1RVM37G2TTU4U29mr/Wrzi5F4k/LgeV2xBjvVH7DTMWrio05UzkH8Y4aXWJyXM4/Ccl6bm0FElodBcz9Gaohp7tGCipodqckEqncJlSczw3ccW/vtO6qJnFZcU+iSVqg7cM8Toli/ZYVGN0VoCmZNfDWr5uGGPlcDrqK8Y1YCgBfxccA343VSjUCHRLX2P1el1BvQ3dUAuYYRCvK1u7GGKcsjpGg7d9SURKrD8oIfjKeQvx3WzLCYuAvTvJeNTSaqp92kNwzT5hvodjLWScFgzB0oZnEsNUMoO3qex+p8nTCOk=
+  on:
+    tags: true
+    repo: magland/kbclient
