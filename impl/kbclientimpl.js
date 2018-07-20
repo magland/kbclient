@@ -578,6 +578,16 @@ function http_get_json(url, callback) {
 }
 
 function http_get_text(url, callback) {
+  http_get_binary(url,{},function(err,buf) {
+    if (err) {
+      callback(err);
+      return;
+    }
+    let txt = buf.toString('utf8');
+    callback(null, txt);
+  });
+
+  /*
   axios.get(url, {
       responseType: 'arraybuffer'
     })
@@ -591,6 +601,7 @@ function http_get_text(url, callback) {
     .catch(function(error) {
       callback(error);
     });
+  */
 }
 
 function http_get_binary(url, opts, callback) {
@@ -603,8 +614,18 @@ function http_get_binary(url, opts, callback) {
       responseType: 'arraybuffer'
     })
     .then(function(response) {
+      let buf=response.data;
+      // this is supper-tricky... it seems there may be a difference in this output depending on whether run in browser or on desktop...
+      if ('length' in buf) {
+        let buf2=new Int8Array(buf.length);
+        for (let i=0; i<buf.length; i++)
+          buf2[i]=buf[i];
+        buf=buf2.buffer;
+      }
+      ////////
+
       setTimeout(function() { // so we don't catch an error from the timeout
-        callback(null, response.data);
+        callback(null, buf);
       }, 0);
     })
     .catch(function(error) {
