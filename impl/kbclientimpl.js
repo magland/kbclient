@@ -8,6 +8,7 @@ catch(err) {
 }
 const axios = require('axios');
 const async = require('async');
+const sha1  = require('node-sha1');
 
 function KBClientImpl() {
   let that=this;
@@ -377,6 +378,10 @@ function KBClientImpl() {
       }
       opts.filename = require('path').basename(path);
       opts.size = obj.original_size;
+      if (fs.existsSync(obj.original_path)) {
+          //callback(null, obj.original_path);
+          prv_local_search(obj, callback);
+      }
       resolve_file_path('sha1://' + obj.original_checksum, opts, callback);
       return;
     }
@@ -386,6 +391,86 @@ function KBClientImpl() {
     }
 
     callback(null, path);
+  }
+}
+
+function prv_local_search(obj, callback) {
+  var opts = {verbose: 2};
+    
+  if ((obj.original_path) && (require('fs').existsSync(obj.original_path))) {
+    // try the original path
+    if (opts.verbose >= 1) {
+      console.log('Trying original path: ' + obj.original_path);
+    }
+    var stream = require('fs').createReadStream(obj.original_path);
+    sha1(stream, function(err, hash) {
+        if (err) {
+            callback('Error: ' + err);
+            return;
+        }
+        if ((!err) && (hash == obj.original_checksum)) {
+            callback(null, obj.original_path)
+            return;
+        }
+        proceed_break();
+    });
+  } else {
+    proceed_break();
+  }
+
+  function proceed_break() {
+      callback('Error. prv directory search not yet implemented');
+  }
+
+
+  function proceed() {
+    var prv_search_paths = common.prv_search_directories();
+    var sha1 = obj.original_checksum || '';
+    var fcs = obj.original_fcs || '';
+    var size = obj.original_size || '';
+    if (!sha1) {
+      callback('original_checksum field not found in prv file: ' + prv_fname);
+      return;
+    }
+    if (opts.verbose >= 1) {
+      console.log('sumit.find_doc_by_sha1 ' + sha1 + ' ' + prv_search_paths.join(':'));
+    }
+    sumit.find_doc_by_sha1(sha1, prv_search_paths, opts, function(err, doc0) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      if (doc0) {
+        callback('', doc0.path, obj);
+        return;
+      }
+      if ((!sha1) || (!size) || (!fcs)) {
+        callback('Missing fields in prv file: ' + prv_fname);
+        return;
+      }
+
+      if (opts.verbose >= 1) {
+        console.log(`Document not found in database, searching on disk...`);
+      }
+      common.foreach_async(prv_search_paths, function(ii, path0, cb) {
+        prv_locate_in_path(path0, sha1, fcs, size, function(err, fname) {
+          if (err) {
+            callback(err);
+            return;
+          }
+          if (fname) {
+            callback('', fname, obj);
+            return;
+          }
+          cb();
+        });
+      }, function() {
+        if (opts.verbose >= 1) {
+          console.log('Not found.');
+        }
+        callback('', '', null); //not found
+      });
+    });
   }
 }
 
