@@ -61,4 +61,13 @@ function KBClient() {
       });
     });
   };
+  this.prvCreate = function(path, opts) {
+    opts=opts||{};
+    return new Promise(function(resolve, reject) {
+      impl.prvCreate(path, opts, function(err, obj) {
+        if (err) return reject(err);
+        resolve(obj);
+      });
+    });
+  };
 }

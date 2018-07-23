@@ -9,6 +9,9 @@ catch(err) {
 const axios = require('axios');
 const async = require('async');
 
+const sumit = require(__dirname+'/sumit.js');
+var SHA1 = require('node-sha1');
+
 function KBClientImpl() {
   let that=this;
   this.readTextFile=function(path, opts, callback) {
@@ -204,6 +207,30 @@ function KBClientImpl() {
     });
   };
 
+  this.prvCreate=function(fname, opts, callback) {
+    var stat0 = stat_file(fname);
+    if (!stat0) {
+      callback(new Error('Unable to stat file in prv_create: ' + fname));
+      return;
+    }
+    sumit.compute_file_sha1(fname, function(err, sha1) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      var sha1_head = compute_sha1_of_head(fname, 1000);
+      var fcs = 'head1000-' + sha1_head;
+      var obj = {
+        original_checksum: sha1,
+        original_size: stat0.size,
+        original_fcs: fcs,
+        original_path: require('path').resolve(fname),
+        prv_version: '0.11'
+      };
+      callback(null, obj);
+    });
+  }
+
   function temporary_directory() {
     var ml_temporary_directory = process.env.ML_TEMPORARY_DIRECTORY || ('/tmp/mountainlab-tmp');
     mkdir_if_needed(ml_temporary_directory);
@@ -290,7 +317,8 @@ function KBClientImpl() {
       return;
     }
     if (opts.download_if_needed) {
-      let tmp_fname = opts.download_to_file || cache_file_path + '.downloading.' + make_random_id(5);
+      let out_fname = opts.download_to_file || cache_file_path;
+      let tmp_fname = out_fname + '.downloading.' + make_random_id(5);
       download_file(url, tmp_fname, {
         sha1: sha1,
         size: opts.size || undefined
@@ -304,18 +332,16 @@ function KBClientImpl() {
           callback(err);
           return;
         }
-        if (fs.existsSync(cache_file_path)) {
-          fs.unlinkSync(tmp_fname);
-          callback(null, cache_file_path);
-          return;
+        if (fs.existsSync(out_fname)) {
+          fs.unlinkSync(out_fname);
         }
         try {
-          fs.renameSync(tmp_fname, cache_file_path);
+          fs.renameSync(tmp_fname, out_fname);
         } catch (err2) {
           callback(new Error('Error renaming file after download.'));
           return;
         }
-        callback(null, cache_file_path);
+        callback(null, out_fname);
       });
     } else {
       callback(null, url);
@@ -377,7 +403,7 @@ function KBClientImpl() {
       }
       opts.filename = require('path').basename(path);
       opts.size = obj.original_size;
-      resolve_file_path('sha1://' + obj.original_checksum, opts, callback);
+      resolve_file_path_from_prv_obj(obj, opts, callback);
       return;
     }
     if ((!fs.existsSync(path)) && (fs.existsSync(path + '.prv'))) {
@@ -387,7 +413,203 @@ function KBClientImpl() {
 
     callback(null, path);
   }
+
+  function resolve_file_path_from_prv_obj(obj, opts, callback) {
+    find_local_file_from_prv_obj(obj, opts, function(err,path) {
+      if ((!err)&&(path)) {
+        callback(null,path);
+        return;
+      }
+      resolve_file_path('sha1://' + obj.original_checksum, opts, callback);
+      return;  
+    });
+  }
 }
+
+
+function find_local_file_from_prv_obj(obj, opts, callback) {
+  if ((obj.original_path) && (require('fs').existsSync(obj.original_path))) {
+    // try the original path
+    if (opts.verbose >= 1) {
+      console.info('Trying original path: ' + obj.original_path);
+    }
+    sumit.compute_file_sha1(obj.original_path, function(err, sha1) {
+      if ((!err) && (sha1 == obj.original_checksum)) {
+        callback(null, obj.original_path);
+        return;
+      }
+      scan_search_directories();
+    });
+  } else {
+    scan_search_directories();
+  }
+
+  function scan_search_directories() {
+    var prv_search_paths = prv_search_directories(opts);
+
+    var sha1 = obj.original_checksum || '';
+    var fcs = obj.original_fcs || '';
+    var size = obj.original_size || '';
+    if (!sha1) {
+      callback('original_checksum field not found in prv file: ' + prv_fname);
+      return;
+    }
+    sumit.find_doc_by_sha1(sha1, prv_search_paths, opts, function(err, doc0) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      if (doc0) {
+        callback('', doc0.path);
+        return;
+      }
+      if ((!sha1) || (!size) || (!fcs)) {
+        callback('Missing fields in prv file: ' + prv_fname);
+        return;
+      }
+
+      async.eachSeries(prv_search_paths, function(path0, cb) {
+        prv_locate_in_directory(path0, sha1, fcs, size, function(err, fname) {
+          if (err) {
+            callback(err);
+            return;
+          }
+          if (fname) {
+            callback('', fname);
+            return;
+          }
+          cb();
+        });
+      }, function() {
+        callback(null,null); //not found
+      });
+    });
+  }
+}
+
+function prv_search_directories(opts) {
+  var ret=[];
+  ret.push(ml_temporary_directory());
+  var ml_additional_prv_search_directories=(process.env.ML_ADDITIONAL_PRV_SEARCH_DIRECTORIES||'').split(':');
+  for (var i in ml_additional_prv_search_directories) {
+    if (ml_additional_prv_search_directories[i]) {
+      ret.push(ml_additional_prv_search_directories[i]);
+    }
+  }
+  return ret;
+}
+
+function ml_temporary_directory() {
+  var tmpdir=process.env.ML_TEMPORARY_DIRECTORY||('/tmp/mountainlab-tmp');
+  return tmpdir;
+}
+
+function prv_locate_in_directory(path, sha1, fcs, size, callback) {
+  var files = read_dir_safe(path);
+  async.eachSeries(files, function(file, cb) {
+    var fname = path + '/' + file;
+    var stat0 = stat_file(fname);
+    if (stat0) {
+      if (stat0.isFile()) {
+        if (stat0.size == size) { //candidate
+          sumit.find_doc_by_path(fname, function(err, doc0) {
+            if (err) {
+              callback(err);
+              return;
+            }
+            if (doc0) {
+              if (doc0.sha1 == sha1) {
+                callback('', fname)
+                return;
+              } else {
+                cb();
+              }
+            } else {
+              if (file_matches_fcs(fname, fcs)) {
+                sumit.compute_file_sha1(fname, function(err, sha1_of_fname) {
+                  if (sha1_of_fname == sha1) {
+                    callback('', fname);
+                    return;
+                  } else {
+                    cb();
+                  }
+                });
+              } else {
+                cb();
+              }
+            }
+          });
+        } else {
+          cb();
+        }
+      } else if (stat0.isDirectory()) {
+        if (file.startsWith('.')) { //hidden directory
+          cb();
+          return;
+        }
+        prv_locate_in_directory(fname, sha1, fcs, size, function(err, fname0) {
+          if (fname0) {
+            callback('', fname0);
+            return;
+          }
+          cb();
+        });
+      } else {
+        cb();
+      }
+    }
+  }, function() {
+    callback('', ''); //not found
+  });
+}
+
+function compute_sha1_of_head(fname, num_bytes) {
+  var buf = read_part_of_file(fname, 0, num_bytes);
+  if (!buf) return null;
+  return SHA1(buf);
+}
+
+function file_matches_fcs_section(path, fcs_section) {
+  var tmp = fcs_section.split('-');
+  if (tmp.length != 2) {
+    console.warn('Invalid fcs section: ' + fcs_section);
+    return false;
+  }
+  if (tmp[0] == 'head1000') {
+    var fcs0 = compute_sha1_of_head(path, 1000);
+    if (!fcs0) return false;
+    return (fcs0 == tmp[1]);
+  } else {
+    console.warn('Unexpected head section: ' + fcs_section);
+    return false;
+  }
+}
+
+function read_part_of_file(path, start, num_bytes) {
+  var stat0 = stat_file(path);
+  if (!stat0) return null;
+  if (stat0.size < start + num_bytes)
+    num_bytes = stat0.size - start;
+  if (num_bytes < 0) return null;
+  if (num_bytes == 0) return new Buffer(0);
+  var buf = new Buffer(num_bytes);
+  var fd = require('fs').openSync(path, 'r');
+  require('fs').readSync(fd, buf, 0, num_bytes, start);
+  require('fs').closeSync(fd);
+  return buf;
+}
+
+function file_matches_fcs(path, fcs) {
+  var list = fcs.split(';');
+  for (var i in list) {
+    if (list[i]) {
+      if (!file_matches_fcs_section(path, list[i]))
+        return false;
+    }
+  }
+  return true;
+}
+
 
 var s_kbucket_client_data = {
   infos_by_sha1: {}
@@ -684,4 +906,22 @@ function mkdir_if_needed(path) {
   try {
     fs.mkdirSync(path);
   } catch (err) {}
+}
+
+function read_dir_safe(path) {
+  try {
+    return require('fs').readdirSync(path);
+  }
+  catch(err) {
+    return [];
+  }
+}
+
+function stat_file(fname) {
+  try {
+    return require('fs').statSync(fname);
+  }
+  catch(err) {
+    return null;
+  }
 }

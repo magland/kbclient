@@ -22,6 +22,8 @@
   "homepage": "https://github.com/magland/kbclient#readme",
   "dependencies": {
     "async": "^2.6.1",
-    "axios": "^0.18.0"
+    "axios": "^0.18.0",
+    "diskdb": "^0.1.17",
+    "node-sha1": "^1.0.1"
   }
 }
