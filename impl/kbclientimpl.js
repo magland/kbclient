@@ -101,11 +101,17 @@ function KBClientImpl() {
         return;
       }
       if (file_path==output_fname) {
+        callback(null,output_fname);
         return;
       }
       console.info(`Copying file [${file_path}] -> [${output_fname}]`);
-      let write_stream=fs.createWriteStream(output_fname);
-      fs.createReadStream(file_path).pipe(write_stream);
+      fs.copyFile(file_path,output_fname,function(err) {
+        if (err) {
+          callback(err);
+          return;
+        }
+        callback(null,output_fname);
+      });
     });
   };
 
