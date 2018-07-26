@@ -7,6 +7,9 @@ const KBClientImpl = require(__dirname + '/impl/kbclientimpl.js').KBClientImpl;
 function KBClient() {
   let impl = new KBClientImpl();
 
+  this.setKBucketUrl = function(url) {
+    impl.setKBucketUrl(url);
+  };
   this.readDir = function(path, opts) {
     opts=opts||{};
     return new Promise(function(resolve, reject) {

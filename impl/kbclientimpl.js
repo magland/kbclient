@@ -14,6 +14,10 @@ var SHA1 = require('node-sha1');
 
 function KBClientImpl() {
   let that=this;
+  let m_kbucket_url = process.env.KBUCKET_URL||'https://kbucket.flatironinstitute.org';
+  this.setKBucketUrl=function(url) {
+    m_kbucket_url=url;
+  }
   this.readTextFile=function(path, opts, callback) {
     if (!callback) {
       callback = opts;
@@ -137,6 +141,7 @@ function KBClientImpl() {
         subdirectory = str.slice(ind0 + 1);
       }
       let HKBC = new HttpKBucketClient();
+      HKBC.setKBucketUrl(m_kbucket_url);
       HKBC.readDir(kbhub_id, subdirectory, function(err, files, dirs) {
         if (err) {
           callback(new Error('Error reading directory of kbucket hub: ' + err));
@@ -358,8 +363,7 @@ function KBClientImpl() {
     if (path.startsWith('sha1://')) {
       let sha1 = path.slice(('sha1://').length);
       let HKBC = new HttpKBucketClient();
-      let kbucket_url = process.env.KBUCKET_URL||'https://kbucket.flatironinstitute.org';
-      HKBC.setKBucketUrl(kbucket_url);
+      HKBC.setKBucketUrl(m_kbucket_url);
       HKBC.findFile(sha1, opts, function(err, resp) {
         if (err) {
           callback(new Error('Error searching for file on kbucket: ' + err));
@@ -382,6 +386,7 @@ function KBClientImpl() {
       }
       let kbshare_id = str.slice(0, ind0);
       let HKBC = new HttpKBucketClient();
+      HKBC.setKBucketUrl(m_kbucket_url);
       HKBC.findLowestAccessibleHubUrl(kbshare_id, function(err, hub_url) {
         if (err) {
           callback(new Error('Error finding kbucket share: ' + err));
