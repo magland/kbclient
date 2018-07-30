@@ -816,7 +816,13 @@ function http_get_text(url, callback) {
       callback(err);
       return;
     }
-    let txt = buf.toString('utf8');
+    let txt='';
+    if ('byteLength' in buf) {
+      txt=String.fromCharCode.apply(null, new Uint8Array(buf));
+    }
+    else {
+      txt = buf.toString('utf8');
+    }
     callback(null, txt);
   });
 
