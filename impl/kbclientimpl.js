@@ -426,6 +426,10 @@ function KBClientImpl() {
   }
 
   function resolve_file_path_from_prv_obj(obj, opts, callback) {
+    if (opts.remote_only) {
+      resolve_file_path('sha1://' + obj.original_checksum, opts, callback);
+      return;
+    }
     find_local_file_from_prv_obj(obj, opts, function(err,path) {
       if ((!err)&&(path)) {
         callback(null,path);
