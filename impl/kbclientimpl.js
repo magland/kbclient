@@ -628,7 +628,7 @@ function file_matches_fcs(path, fcs) {
 
 var s_kbucket_client_data = {
   infos_by_sha1: {}
-}
+};
 
 function HttpKBucketClient() {
   const that = this;
