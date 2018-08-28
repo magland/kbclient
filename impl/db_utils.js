@@ -203,5 +203,5 @@ function mkdir_if_needed(path) {
 }
 
 function config_directory() {
-	return process.env.ML_CONFIG_DIRECTORY||process.env.HOME+'/.mountainlab';
+	return (process.env.ML_CONFIG_DIRECTORY||process.env.HOME)+'/.mountainlab';
 }

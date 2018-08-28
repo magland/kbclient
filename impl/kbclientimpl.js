@@ -324,8 +324,13 @@ function KBClientImpl() {
   	}
     let cache_file_path = get_cache_file_path_for_sha1(sha1);
     if (fs.existsSync(cache_file_path)) {
-      callback(null, cache_file_path);
-      return;
+      let file_size=fs.statSync(cache_file_path).size;
+      if (file_size>0) {
+        if ((!opts.size)||(file_size==opts.size)) {
+          callback(null, cache_file_path);
+          return;
+        }
+      }
     }
     if (opts.download_if_needed) {
       let out_fname = opts.download_to_file || cache_file_path;
